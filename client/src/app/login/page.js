@@ -23,7 +23,7 @@ export default function Login() {
     try {
       const { error } = await authClient.signIn.email({
         email,
-        password
+        password,
       });
 
       if (error) {
@@ -49,8 +49,8 @@ export default function Login() {
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "http://localhost:3000/dashboard",
-        errorCallbackURL: "http://localhost:3000/login"
+        callbackURL: `${window.location.origin}/dashboard`,
+        errorCallbackURL: `${window.location.origin}/login`,
       });
 
       if (error) {
@@ -106,12 +106,15 @@ export default function Login() {
       </form>
 
       <button
+        type="button"
         className="btn outline"
         style={{ width: "100%", marginTop: 12 }}
         onClick={google}
         disabled={busy || googleBusy}
       >
-        {googleBusy ? "Connecting to Google..." : "Continue with Google"}
+        {googleBusy
+          ? "Connecting to Google..."
+          : "Continue with Google"}
       </button>
 
       <p className="muted">
