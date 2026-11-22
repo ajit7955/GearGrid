@@ -22,6 +22,11 @@ app.set("trust proxy", 1);
 const allowedOrigins = [
   process.env.CLIENT_URL,
   process.env.CLIENT_URL_LOCAL,
+
+  // Production Frontend
+  "https://gear-grid-theta.vercel.app",
+
+  // Local Development
   "http://localhost:3000",
   "http://127.0.0.1:3000",
   "http://192.168.0.198:3000"
@@ -34,7 +39,11 @@ const corsOptions = {
       return callback(null, true);
     }
 
-    return callback(new Error(`CORS blocked origin: ${origin}`));
+    console.error("CORS blocked origin:", origin);
+
+    return callback(
+      new Error(`CORS blocked origin: ${origin}`)
+    );
   },
 
   credentials: true,
@@ -42,7 +51,10 @@ const corsOptions = {
   exposedHeaders: ["set-auth-jwt"]
 };
 
-// Security headers
+// ------------------------------------
+// SECURITY HEADERS
+// ------------------------------------
+
 app.use(
   helmet({
     crossOriginResourcePolicy: {
@@ -51,7 +63,10 @@ app.use(
   })
 );
 
-// CORS middleware also handles OPTIONS preflight requests
+// ------------------------------------
+// CORS MIDDLEWARE
+// ------------------------------------
+
 app.use(cors(corsOptions));
 
 // ------------------------------------
@@ -76,10 +91,14 @@ app.post(
         !process.env.STRIPE_SECRET_KEY ||
         !process.env.STRIPE_WEBHOOK_SECRET
       ) {
-        return res.status(503).send("Stripe webhook is not configured");
+        return res
+          .status(503)
+          .send("Stripe webhook is not configured");
       }
 
-      const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+      const stripe = new Stripe(
+        process.env.STRIPE_SECRET_KEY
+      );
 
       const event = stripe.webhooks.constructEvent(
         req.body,
@@ -89,6 +108,7 @@ app.post(
 
       if (event.type === "checkout.session.completed") {
         const session = event.data.object;
+
         const bookingId = session.metadata?.bookingId;
         const customerId = session.metadata?.customerId;
 
@@ -129,9 +149,11 @@ app.post(
             );
 
             await client.query("COMMIT");
+
           } catch (error) {
             await client.query("ROLLBACK");
             throw error;
+
           } finally {
             client.release();
             client = null;
@@ -142,7 +164,10 @@ app.post(
       return res.json({ received: true });
 
     } catch (error) {
-      console.error("Stripe webhook error:", error.message);
+      console.error(
+        "Stripe webhook error:",
+        error.message
+      );
 
       return res.status(400).send(
         `Webhook Error: ${error.message}`
